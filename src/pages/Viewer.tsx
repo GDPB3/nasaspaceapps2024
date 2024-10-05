@@ -1,39 +1,37 @@
 import "@mantine/core/styles.css";
 import React, { useMemo } from "react";
-import { PlanetData } from "../types";
-import { Canvas, extend, useThree, useRender } from "@react-three/fiber";
-import { OrbitControls, Point, PointMaterial } from "@react-three/drei";
+import { Star } from "../types";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { Affix } from "@mantine/core";
+import PlanetInfo from "../components/PlanetInfo";
 
 type ViewerProps = {
-  planet: PlanetData;
+  planet: string;
+  stars: Star[];
 };
 
 type ViewerState = object;
 
-const NUM_STARS = 1000;
 const STAR_SIZE = 0.3;
 
 const textureLoader = new THREE.TextureLoader();
 const starTexture = textureLoader.load("/textures/star.png");
 
-function getVertices() {
-  const geometry = new THREE.BufferGeometry();
-
-  const vertices_jsarray = [];
-  for (let i = 0; i < NUM_STARS; i++) {
-    vertices_jsarray.push((Math.random() - 0.5) * 100); // -0.5 to get the range from -0.5 to 0.5 than * 100 to get a range from -50 to 50
-    vertices_jsarray.push((Math.random() - 0.5) * 100);
-    vertices_jsarray.push((Math.random() - 0.5) * 100);
+function getVertices(stars: Star[]) {
+  const _verts = [];
+  for (const star of stars) {
+    _verts.push(star.pos[0]);
+    _verts.push(star.pos[1]);
+    _verts.push(star.pos[2]);
   }
 
-  const vertices = new Float32Array(vertices_jsarray);
-
-  return { geometry, vertices };
+  return new Float32Array(_verts);
 }
 
-function Dots(data: any) {
-  const { geometry, vertices } = useMemo(getVertices, []);
+function Dots(props: { stars: Star[] }) {
+  const vertices = useMemo(() => getVertices(props.stars), [props.stars]);
 
   return (
     <points>
@@ -50,8 +48,10 @@ function Dots(data: any) {
       </bufferGeometry>
       <pointsMaterial
         map={starTexture}
+        transparent={true}
         sizeAttenuation={true}
-        size={STAR_SIZE}></pointsMaterial>
+        size={STAR_SIZE}
+      />
     </points>
   );
 }
@@ -64,16 +64,17 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
   render() {
     return (
       <>
-        <div>{this.props.planet}</div>
+        <Affix position={{ bottom: 20, right: 20 }}>
+          <PlanetInfo planet={this.props.planet} />
+        </Affix>
         <Canvas>
-          {/* <ambientLight intensity={2} color={0xffffff} />
-        <pointLight position={[0, 0, 0]} intensity={2} color={0xffffff} /> */}
+          <color attach="background" args={["#141622"]} />
           <OrbitControls
             enableDamping
             reverseOrbit
             enableZoom={false} // disable zoom (scroll)
           />
-          <Dots data={{}} />
+          <Dots stars={this.props.stars} />
         </Canvas>
       </>
     );

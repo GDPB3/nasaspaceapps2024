@@ -5,7 +5,7 @@ import React from "react";
 import { PlanetData } from "../types";
 
 type SelectorProps = {
-  onSubmit: (planet: PlanetData) => void;
+  onSubmit: (planet: string) => void;
 };
 
 export default class Selector extends React.Component<SelectorProps, object> {
