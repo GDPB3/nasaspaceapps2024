@@ -6,13 +6,16 @@ import { OrbitControls, Stats, TrackballControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Affix, Text, ActionIcon, Group, ThemeIcon } from "@mantine/core";
 import PlanetInfo from "../components/PlanetInfo";
-import { IconPlayerPause, IconPlayerPlay } from "@tabler/icons-react";
+import {
+  IconAccessible,
+  IconAccessibleOff,
+  IconAlien,
+  IconPlayerPause,
+  IconPlayerPlay,
+} from "@tabler/icons-react";
 import { clamp, hsv2rgb, rgb2hsv, wavelength2rgb } from "../tools";
 
-const STAR_SIZE = 0.1;
-
-const tempColor = new THREE.Color();
-const tempObject = new THREE.Object3D();
+const STAR_SIZE = 0.3;
 
 function Planet() {
   return (
@@ -42,69 +45,59 @@ const calcStarColor = (star: Star): [number, number, number] => {
   return rgb2.map((x) => x * 255) as [number, number, number];
 };
 
-function Dots(props: DotsProps) {
-  const [hovered, set] = React.useState<number | undefined>(undefined);
+function getInfo(stars: Star[]) {
+  const _verts = [];
+  const _colors = [];
+  const _sizes = [];
+  for (const star of stars) {
+    _verts.push(...star.pos);
+    _colors.push(...calcStarColor(star));
+    _sizes.push(0);
+  }
+  const vertices = new Float32Array(_verts);
+  const colors = new Float32Array(_colors);
+  const sizes = new Float32Array(_sizes);
 
-  const colorArray = Float32Array.from(
-    new Array(props.stars.length)
-      .fill(0)
-      .flatMap((_, i) =>
-        tempColor.setRGB(...calcStarColor(props.stars[i])).toArray()
-      )
+  return { vertices, colors, sizes };
+}
+
+const textureLoader = new THREE.TextureLoader();
+const starTexture = textureLoader.load("/textures/blended_star.png");
+
+function Dots(props: { stars: Star[] }) {
+  const { vertices, colors, sizes } = useMemo(
+    () => getInfo(props.stars),
+    [props.stars]
   );
-  const meshRef = React.useRef<THREE.InstancedMesh | null>(null);
-  const prevRef = React.useRef();
 
-  useFrame(() => {
-    let i = 0;
-    for (const star of props.stars) {
-      const [x, y, z] = star.pos;
-      const id = i++;
-      tempObject.position.set(x, y, z);
-      tempObject.scale.set(star.radius, star.radius, star.radius);
-      if (hovered !== prevRef.current) {
-        (id === hovered
-          ? tempColor.set("#555555")
-          : tempColor.setRGB(...calcStarColor(star))
-        ).toArray(colorArray, id * 3);
-        meshRef!.current!.geometry.attributes.color.needsUpdate = true;
-      }
-      tempObject.updateMatrix();
-      meshRef.current!.setMatrixAt(id, tempObject.matrix);
-    }
-    meshRef.current!.instanceMatrix.needsUpdate = true;
-  });
+  // console.log(sizes);
 
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[null, null, props.stars.length]}
-      onPointerMove={(e) => {
-        e.stopPropagation();
-        set(e.instanceId);
-        if (e.instanceId == null) {
-          props.onLeave();
-        } else {
-          props.onHover(e.instanceId);
-        }
-      }}
-      onPointerOut={() => {
-        set(undefined);
-        props.onLeave();
-      }}>
-      <sphereGeometry args={[STAR_SIZE, 15, 30]}>
-        <instancedBufferAttribute
-          attach="attributes-color"
-          args={[colorArray, 3]}
+    <points>
+      <bufferGeometry attach="geometry">
+        <bufferAttribute
+          attach="attributes-position"
+          count={vertices.length / 3}
+          array={vertices}
+          itemSize={3}
+          onUpdate={(self) => {
+            self.needsUpdate = true;
+          }}
         />
-      </sphereGeometry>
-      <meshBasicMaterial
-        toneMapped={false}
-        vertexColors
-        transparent={true}
+        {/* <bufferAttribute attach="attributes-size" args={[sizes, 1]} /> */}
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+        {/* <starTexture /> */}
+      </bufferGeometry>
+      <pointsMaterial
+        map={starTexture}
+        transparent
+        sizeAttenuation
+        // size={STAR_SIZE}
+        depthTest={false}
         blending={THREE.AdditiveBlending}
+        vertexColors
       />
-    </instancedMesh>
+    </points>
   );
 }
 
@@ -192,14 +185,14 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             onEnd={this.onUserInteractEnd}
             reverseOrbit
             enableRotate
-            autoRotate={this.state.rotate}
+            // autoRotate={this.state.rotate}
             maxDistance={0.001}
             enableZoom={false} // disable zoom (scroll)
           />
           <Dots
             stars={this.props.stars}
-            onHover={(id) => this.setState({ hovered: id })}
-            onLeave={() => this.setState({ hovered: null })}
+            // onHover={(id) => this.setState({ hovered: id })}
+            // onLeave={() => this.setState({ hovered: null })}
           />
           <Stats />
           <Planet />
