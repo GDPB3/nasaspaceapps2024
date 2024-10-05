@@ -5,12 +5,12 @@ import { API_URL } from "../consts";
 import type { PlanetData } from "../types";
 
 type SearchProps = {
-  onSubmit: (planet: string) => void;
+  onSubmit: (planet: PlanetData) => void;
 };
 type SearchState = {
   search: string;
-  results: Array<string>;
-  first_100: Array<string>;
+  results: PlanetData[];
+  first_100: PlanetData[];
 };
 
 export default class Search extends React.Component<SearchProps, SearchState> {
@@ -24,7 +24,7 @@ export default class Search extends React.Component<SearchProps, SearchState> {
   }
 
   componentDidMount(): void {
-    fetch(`${API_URL}/planets/names?count=100`)
+    fetch(`${API_URL}/planets?count=100`)
       .then((res) => res.json())
       .then((data) => {
         this.setState({
@@ -45,7 +45,7 @@ export default class Search extends React.Component<SearchProps, SearchState> {
       return;
     }
 
-    fetch(`${API_URL}/planets/names?query=${value}&count=100`)
+    fetch(`${API_URL}/planets?query=${value}&count=100`)
       .then((res) => res.json())
       .then((data) => {
         this.setState({
@@ -56,13 +56,19 @@ export default class Search extends React.Component<SearchProps, SearchState> {
 
   handleSubmit = (value: string) => {
     console.log("Submitted ", value);
-    this.props.onSubmit(value);
+    // This should never fail because the value is chosen form the list!
+    const planet = this.state.results.find((p) => p.pl_name === value);
+    if (planet === undefined) {
+      console.error("Planet not found (this should not happen)");
+      return;
+    }
+    this.props.onSubmit(planet!);
   };
 
   render() {
     return (
       <Autocomplete
-        data={this.state.results}
+        data={this.state.results.map((pl) => pl.pl_name)}
         value={this.state.search}
         onChange={this.handleChange}
         onOptionSubmit={this.handleSubmit}

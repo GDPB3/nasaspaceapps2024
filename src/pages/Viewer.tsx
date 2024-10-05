@@ -1,14 +1,14 @@
 import "@mantine/core/styles.css";
 import React, { useMemo } from "react";
-import { Star } from "../types";
+import { PlanetData, Star } from "../types";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { Affix } from "@mantine/core";
+import { Affix, Text } from "@mantine/core";
 import PlanetInfo from "../components/PlanetInfo";
 
 type ViewerProps = {
-  planet: string;
+  planet: PlanetData;
   stars: Star[];
 };
 
@@ -64,7 +64,8 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
   render() {
     return (
       <>
-        <Affix position={{ bottom: 20, right: 20 }}>
+        <Affix position={{ top: 20, right: 20 }}>
+          <Text color="white">{this.props.stars.length} stars</Text>
           <PlanetInfo planet={this.props.planet} />
         </Affix>
         <Canvas>

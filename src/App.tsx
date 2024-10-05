@@ -2,22 +2,32 @@ import "./App.css";
 import "@mantine/core/styles.css";
 import { MantineProvider, Notification, Affix } from "@mantine/core";
 import React from "react";
-import { Star } from "./types";
+import { PlanetData, Star } from "./types";
 import Selector from "./pages/Selector";
 import Viewer from "./pages/Viewer";
 import LoadingScreen from "./pages/LoadingScreen";
 import { API_URL } from "./consts";
 import {
+  Icon3dCubeSphere,
   IconAlertSmall,
   IconAlertTriangle,
   IconAlertTriangleFilled,
 } from "@tabler/icons-react";
 
+type Notification = {
+  title: string;
+  message: string;
+  icon: React.ReactNode;
+  exit_time: number;
+  color: string;
+};
+
 type AppState = {
-  planet: string | null;
+  planet: PlanetData | null;
   stars: Star[] | null;
-  alertTimer: number; // the number of remaining seconds for the alert to be displayed
+  notifications: Notification[];
   intervalId: number | null;
+  timer: number;
 };
 
 export default class App extends React.Component<object, AppState> {
@@ -27,17 +37,51 @@ export default class App extends React.Component<object, AppState> {
     this.state = {
       planet: null,
       stars: null,
-      alertTimer: 0,
+      notifications: [],
       intervalId: null,
+      timer: 0,
     };
+
+    setTimeout(() => {
+      this.addNotification(
+        "Welcome to the Universe!",
+        "Select a planet to view its stars.",
+        <Icon3dCubeSphere />,
+        10,
+        "blue"
+      );
+    }, 1000);
   }
 
-  handleSearchSubmit = (planet: string) => {
+  addNotification = (
+    title: string,
+    message: string,
+    icon: React.ReactNode,
+    time: number,
+    color: string
+  ) => {
+    this.setState((prev_state) => ({
+      notifications: [
+        {
+          title: title,
+          message: message,
+          icon: icon,
+          exit_time: prev_state.timer + time,
+          color: color,
+        },
+        ...prev_state.notifications,
+      ],
+    }));
+  };
+
+  handleSearchSubmit = (planet: PlanetData) => {
     this.setState({
       planet: planet,
     });
 
-    fetch(`${API_URL}/planets/${planet}/stars?limit=10000&trunk_halfheight=50`)
+    fetch(
+      `${API_URL}/planets/${planet.pl_name}/stars?limit=10000&trunk_halfheight=50`
+    )
       .then((res) => res.json())
       .then((data) => {
         this.setState({
@@ -48,18 +92,22 @@ export default class App extends React.Component<object, AppState> {
         console.error("Error fetching stars: ", error);
         this.setState({
           planet: null,
-          alertTimer: 5,
         });
+        this.addNotification(
+          "Oops!",
+          "Something went wrong.",
+          <IconAlertSmall />,
+          5,
+          "red"
+        );
       });
   };
 
   componentDidMount() {
     const intervalId = setInterval(() => {
-      if (this.state.alertTimer > 0) {
-        this.setState({
-          alertTimer: this.state.alertTimer - 1,
-        });
-      }
+      this.setState({
+        timer: this.state.timer + 1,
+      });
     }, 1000);
     this.setState({
       intervalId: intervalId,
@@ -80,19 +128,22 @@ export default class App extends React.Component<object, AppState> {
         ) : (
           <Viewer planet={this.state.planet} stars={this.state.stars} />
         )}
-        {this.state.alertTimer > 0 && (
-          <Affix position={{ bottom: 20, right: 20 }}>
-            <Notification
-              // variant="dark"
-              // autoContrast
-              color="red"
-              title="Oops!"
-              icon={<IconAlertSmall />}
-              onClose={() => this.setState({ alertTimer: 0 })}>
-              Something went wrong.
-            </Notification>
-          </Affix>
-        )}
+        <Affix position={{ bottom: 20, right: 20 }}>
+          {this.state.notifications.map(
+            (not, i) =>
+              not.exit_time >= this.state.timer && (
+                <Notification
+                  key={i}
+                  mt="md"
+                  color={not.color}
+                  title={not.title}
+                  icon={not.icon}
+                  withCloseButton={false}>
+                  {not.message}
+                </Notification>
+              )
+          )}
+        </Affix>
       </MantineProvider>
     );
   }
