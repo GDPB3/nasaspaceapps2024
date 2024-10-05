@@ -5,11 +5,12 @@ import { API_URL } from "../consts";
 import type { PlanetData } from "../types";
 
 type SearchProps = {
-  onSubmit: (planet: PlanetData) => void;
+  onSubmit: (planet: string) => void;
 };
 type SearchState = {
   search: string;
-  results: Array<PlanetData>;
+  results: Array<string>;
+  first_100: Array<string>;
 };
 
 export default class Search extends React.Component<SearchProps, SearchState> {
@@ -17,49 +18,51 @@ export default class Search extends React.Component<SearchProps, SearchState> {
     super(props);
     this.state = {
       search: "",
-      results: ["Earth", "Mars", "Venus", "Jupiter", "Saturn"].map(
-        (planet) => ({
-          pl_name: planet,
-          hostname: "Sun",
-          ra: 0,
-          dec: 0,
-          sy_dist: 0,
-        })
-      ),
+      results: [],
+      first_100: [],
     };
+  }
 
-    // fetch(`${API_URL}/planets`)
-    //   .then((res) => res.json())
-    //   .then((data) => {
-    //     this.setState({
-    //       results: data,
-    //     });
-    //   });
+  componentDidMount(): void {
+    fetch(`${API_URL}/planets/names?count=100`)
+      .then((res) => res.json())
+      .then((data) => {
+        this.setState({
+          results: data,
+          first_100: data,
+        });
+      });
   }
 
   handleChange = (value: string) => {
     this.setState({
       search: value,
     });
+    if (value.length < 3) {
+      this.setState({
+        results: this.state.first_100,
+      });
+      return;
+    }
+
+    fetch(`${API_URL}/planets/names?query=${value}&count=100`)
+      .then((res) => res.json())
+      .then((data) => {
+        this.setState({
+          results: data,
+        });
+      });
   };
 
   handleSubmit = (value: string) => {
-    const result = this.state.results.find((p) => p.pl_name === value);
-    console.log("Submitted ", result);
-    if (result == null) {
-      console.error(
-        "No planet found with name " +
-          value +
-          "(this is very bad, because we created the list)"
-      );
-    }
-    this.props.onSubmit(result!);
+    console.log("Submitted ", value);
+    this.props.onSubmit(value);
   };
 
   render() {
     return (
       <Autocomplete
-        data={this.state.results.map((p) => p.pl_name)}
+        data={this.state.results}
         value={this.state.search}
         onChange={this.handleChange}
         onOptionSubmit={this.handleSubmit}

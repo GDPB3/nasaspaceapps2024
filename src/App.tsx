@@ -1,22 +1,13 @@
 import "./App.css";
 import "@mantine/core/styles.css";
-import {
-  MantineProvider,
-  Card,
-  Image,
-  Text,
-  Center,
-  Container,
-  Title,
-} from "@mantine/core";
-import Search from "./components/Search";
+import { MantineProvider } from "@mantine/core";
 import React from "react";
 import { PlanetData } from "./types";
 import Selector from "./pages/Selector";
 import Viewer from "./pages/Viewer";
 
 type AppState = {
-  planet: PlanetData | null;
+  planet: string | null;
 };
 
 export default class App extends React.Component<object, AppState> {
@@ -25,10 +16,17 @@ export default class App extends React.Component<object, AppState> {
 
     this.state = {
       planet: null,
+      // planet: {
+      //   pl_name: "Earth",
+      //   hostname: "Sun",
+      //   ra: 0,
+      //   dec: 0,
+      //   sy_dist: 0,
+      // },
     };
   }
 
-  handleSearchSubmit = (planet: PlanetData) => {
+  handleSearchSubmit = (planet: string) => {
     this.setState({
       planet: planet,
     });
