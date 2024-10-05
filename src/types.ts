@@ -16,4 +16,8 @@ export type PlanetData = {
 export type Star = {
   pos: number[];
   lum: number;
+  temperature: number;
+  mass: number;
+  age: number;
+  radius: number;
 };
