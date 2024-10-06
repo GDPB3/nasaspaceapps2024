@@ -144,3 +144,6 @@ async def get_stars_from_planet_coords(
     print(f"Parsing the data took {time.time() - start_time} secs")
 
     return stars
+
+if __name__ == "__main__":
+    pass

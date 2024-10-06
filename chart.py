@@ -48,12 +48,8 @@ def change_pole_for_projection(pole:list[int], pos:list[float]) -> list[float]:
 
 def draw_chart(stars:list[StarData], output:str, position: list[int] = default_pole):
     chart_size = 20
-    max_star_size = 1000000
-    min_star_size = 0
+    min_star_size = 2
     size_factor = 100
-
-    max_size_in_chart = 100
-    limiting_factor = 10
 
     print("Resize stars...")
     stars = [StarData(
@@ -68,11 +64,7 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
     
     print("Filtering stars by radius...")
     # filter out stars by radius
-    stars = [star for star in stars if star.radius >= min_star_size and star.radius <= max_star_size]
-
-    # print("Filtering stars by lum...")
-    # # filter out stars by lum
-    # stars = [star for star in stars if star.lum <= limiting_factor]
+    stars = [star for star in stars if star.radius >= min_star_size]
 
     print("Mapping star data to unit...")
     # Convert the star data to a format that can be used by the chart [0, 1]
@@ -111,9 +103,6 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
 
     marker_size = [star.radius*size_factor for star in stars_2d]
 
-    # marker_size = [max_size_in_chart*10 ** (star.lum / -2.5) for star in stars_2d]
-    # marker_size = [star.lum*size_factor for star in stars_2d]
-
     print("Drawing stars...")
     ax.scatter(
         [star.pos[0] for star in stars_2d], 
@@ -125,9 +114,9 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
         zorder=2
     )
 
-    horizon = plt.Circle((0, 0), radius=1, transform=ax.transData)
-    for col in ax.collections:
-        col.set_clip_path(horizon)
+    # horizon = plt.Circle((0, 0), radius=1, transform=ax.transData)
+    # for col in ax.collections:
+    #     col.set_clip_path(horizon)
 
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
@@ -139,6 +128,9 @@ if __name__ == "__main__":
     # stars = pkl.load(open("data.pkl", "rb"))
     stars = json.load(open("smth.json", "r"))
     stars = [StarData(**star) for star in stars]
-    draw_chart(stars, 'chart.png')
-    draw_chart(stars, 'chart1.png', position=[1, 0, 0])
-    draw_chart(stars, 'chart2.png', position=[0, 1, 0])
+    draw_chart(stars, 'charts/chart.png')
+    draw_chart(stars, 'charts/chart1.png', position=[1, 0, 0])
+    draw_chart(stars, 'charts/chart2.png', position=[0, 1, 0])
+    draw_chart(stars, 'charts/chart3.png', position=[0, 0, -1])
+    draw_chart(stars, 'charts/chart4.png', position=[-1, 0, 0])
+    draw_chart(stars, 'charts/chart5.png', position=[0, -1, 0])
