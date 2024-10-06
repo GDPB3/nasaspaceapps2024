@@ -9,3 +9,4 @@ The result is hosted on [soymilk.lueng.org](https://soymilk.lueng.org)
 
 The frontend source is on the [front branch](https://github.com/pblop/hackathon2024/tree/front), the backend source is on the [api branch](https://github.com/pblop/hackathon2024/tree/api).
 
+The pdf slides are available [on this same repo](Exostarry Night.pdf)
