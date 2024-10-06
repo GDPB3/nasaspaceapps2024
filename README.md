@@ -7,6 +7,6 @@ The result is hosted on [soymilk.lueng.org](https://soymilk.lueng.org)
 ![Stars screenshot](stars.png)
 ![Star chart](chart.png)
 
-The frontend source is on the [front branch](https://github.com/pblop/hackathon2024/tree/front), the backend source is on the [api branch](https://github.com/pblop/hackathon2024/tree/api).
+The frontend source is on the [front branch](https://github.com/GDBP3/nasaspaceapps2024/tree/front), the backend source is on the [api branch](https://github.com/GDBP3/nasaspaceapps2024/tree/api).
 
-The pdf slides are available [on this same repo](https://github.com/pblop/hackathon2024/blob/main/Exostarry%20Night.pdf)
+The pdf slides are available [on this same repo](https://github.com/GDBP3/nasaspaceapps2024/blob/main/Exostarry%20Night.pdf)
