@@ -1,7 +1,6 @@
 import pyvo as vo
 from models import PlanetData
 import pickle
-import math
 from utils import negone_or
 
 # Use a TAP client when returning large data sets. If you're downloading the entire PS or PSCompPars tables in VOTable format,

@@ -1,10 +1,9 @@
-from fastapi import FastAPI, Response
-from models import PlanetData, StarData, ChartData
-from fastapi.middleware.cors import CORSMiddleware
-import pickle
-import time
-from utils import get_stars_from_planet_coords
 from chart import draw_chart
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
+from models import PlanetData, StarData, ChartData
+import pickle
+from utils import get_stars_from_planet_coords
 
 planets_list : list[PlanetData] = pickle.load(open("planets.p", "rb"))
 print(f"Loaded {len(planets_list)} planets from planets.p")
@@ -74,3 +73,4 @@ async def make_chart(data: ChartData) -> Response:
     image = draw_chart(stars, data.chart_size, data.quaternion)
 
     return Response(content=image, media_type="image/png")
+

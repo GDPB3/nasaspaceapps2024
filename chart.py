@@ -83,3 +83,4 @@ def draw_chart(_stars:list[StarData], chart_size:int, current_rotation:tuple[flo
     buffer.close()
 
     return image_png 
+

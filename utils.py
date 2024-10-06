@@ -149,5 +149,3 @@ async def get_stars_from_planet_coords(
 
     return stars
 
-if __name__ == "__main__":
-    pass
