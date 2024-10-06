@@ -9,36 +9,34 @@ import {
   TrackballControls,
 } from "@react-three/drei";
 import * as THREE from "three";
-import { Affix, Text, ActionIcon, Group, ThemeIcon } from "@mantine/core";
+import {
+  Affix,
+  Text,
+  ActionIcon,
+  Group,
+  ThemeIcon,
+  Space,
+  rem,
+} from "@mantine/core";
 import PlanetInfo from "../components/PlanetInfo";
 import {
   IconAccessible,
   IconAccessibleOff,
   IconAlien,
+  IconArrowLeft,
+  IconCamera,
+  IconCrop11,
+  IconGrid4x4,
   IconPlayerPause,
   IconPlayerPlay,
+  IconWorld,
+  IconWorldUpload,
 } from "@tabler/icons-react";
 import { clamp, hsv2rgb, rgb2hsv, wavelength2rgb } from "../tools";
 import { fragmentShader, vertexShader } from "../components/StarMaterial";
 import { color } from "three/webgpu";
 import Planetarium from "../components/Planetarium";
-
-const STAR_SIZE = 1;
-
-function Planet() {
-  return (
-    <mesh>
-      <sphereGeometry args={[0.05, 30, 30]} />
-      <meshBasicMaterial color="red" />
-    </mesh>
-  );
-}
-
-type DotsProps = {
-  stars: Star[];
-  onHover: (id: number) => void;
-  onLeave: () => void;
-};
+import { API_URL } from "../consts";
 
 type ViewerProps = {
   planet: PlanetData;
@@ -47,9 +45,19 @@ type ViewerProps = {
   // Time from the time the user stops interacting with the viewer until
   // the auto-rotation starts again (in seconds).
   rotateAgainTime?: number;
+
+  notify(
+    title: string,
+    message: string,
+    icon: React.ReactNode,
+    time: number,
+    color: string
+  ): void;
+
+  goBack(): void;
 };
 
-const DEFAULT_ROTATE_AGAIN_TIME = 1;
+const DEFAULT_ROTATE_AGAIN_TIME = 3;
 
 enum RotationPauseReason {
   USER_INTERACTION,
@@ -58,11 +66,23 @@ enum RotationPauseReason {
 
 type ViewerState = {
   hovered: number | null;
+
+  // Rotation control
   rotate: boolean;
   rotateAgainTimeoutId: number | null;
   pauseReason: RotationPauseReason | null;
+
+  // Control whether the camera is outside the planet (false) or on the ground (true)
+  isOnGround: boolean;
+
+  // Show the plane that represents the ground
+  showPlane: boolean;
+
+  isMakingPhoto: boolean;
 };
 export default class Viewer extends React.Component<ViewerProps, ViewerState> {
+  child: Planetarium | null = null;
+
   constructor(props: ViewerProps) {
     super(props);
 
@@ -73,6 +93,11 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
       rotate: true,
       rotateAgainTimeoutId: null,
       pauseReason: null,
+
+      isOnGround: true,
+
+      showPlane: true,
+      isMakingPhoto: false,
     };
   }
 
@@ -98,7 +123,7 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
           this.setState({
             rotate: true,
             rotateAgainTimeoutId: null,
-            pauseReason: RotationPauseReason.BUTTON,
+            pauseReason: null,
           });
         }, this.props.rotateAgainTime ?? DEFAULT_ROTATE_AGAIN_TIME * 1000),
       });
@@ -117,11 +142,76 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
     });
   };
 
+  onClickMakePhoto = () => {
+    console.log("Make photo");
+    const vecs = this.child?.getCameraVecs();
+    if (vecs == null) return;
+
+    this.setState({
+      isMakingPhoto: true,
+    });
+    this.props.notify(
+      "Creating photo",
+      "Please wait!",
+      <IconCamera size={16} />,
+      10,
+      "blue"
+    );
+
+    fetch(`${API_URL}/planets/chart`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pl_name: this.props.planet.pl_name,
+        quaternion: vecs.quaternion,
+        chart_size: 80,
+      }),
+    })
+      .then((res) => res.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = `My ${this.props.planet.pl_name} chart.png`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        this.props.notify(
+          "Success",
+          "Photo saved to your downloads",
+          <IconCamera size={16} />,
+          5,
+          "blue"
+        );
+        this.setState({
+          isMakingPhoto: false,
+        });
+      })
+      .catch((error) => {
+        console.error("Error making photo: ", error);
+        this.props.notify(
+          "Error",
+          "Error making photo",
+          <IconCamera size={16} />,
+          5,
+          "red"
+        );
+
+        this.setState({
+          isMakingPhoto: false,
+        });
+      });
+  };
+
   render() {
     return (
       <>
         <Affix position={{ top: 20, right: 20 }}>
-          <Group align="center" justify="center">
+          <Group align="center" justify="right" ml="auto">
             <Text color="white">
               {this.props.stars.length} stars (max lum{" "}
               {Math.max(...this.props.stars.map((s) => s.lum))})
@@ -133,11 +223,25 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             <ActionIcon
               color="blue"
               radius="xl"
-              onClick={this.onClickPlayPause}>
-              {this.state.rotate ? (
-                <IconPlayerPause size={16} />
+              onClick={() =>
+                this.setState({ isOnGround: !this.state.isOnGround })
+              }>
+              {this.state.isOnGround ? (
+                <IconWorld size={16} />
               ) : (
-                <IconPlayerPlay size={16} />
+                <IconWorldUpload size={16} />
+              )}
+            </ActionIcon>
+            <ActionIcon
+              color="blue"
+              radius="xl"
+              onClick={() =>
+                this.setState({ showPlane: !this.state.showPlane })
+              }>
+              {this.state.showPlane ? (
+                <IconGrid4x4 size={16} />
+              ) : (
+                <IconCrop11 size={16} />
               )}
             </ActionIcon>
             <ActionIcon
@@ -152,12 +256,36 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             </ActionIcon>
             <PlanetInfo planet={this.props.planet} />
           </Group>
+          <Group mt="xs" align="center" justify="right" ml="auto">
+            {this.state.isOnGround && (
+              <ActionIcon
+                color="blue"
+                radius="xl"
+                disabled={this.state.isMakingPhoto}
+                onClick={this.onClickMakePhoto}>
+                <IconCamera size={16} />
+              </ActionIcon>
+            )}
+            <Space w={rem("28px")} /> {/* 28px is the width of the icon md */}
+            <Space w={rem("28px")} />
+            <Space w={rem("28px")} />
+          </Group>
+        </Affix>
+        <Affix position={{ top: 20, left: 20 }}>
+          <ActionIcon color="blue" radius="xl" onClick={this.props.goBack}>
+            <IconArrowLeft size={16} />
+          </ActionIcon>
         </Affix>
         <Planetarium
+          ref={(instance) => {
+            this.child = instance;
+          }}
           stars={this.props.stars}
           autoRotate={this.state.rotate}
           onUserInteract={this.onUserInteract}
           onUserInteractEnd={this.onUserInteractEnd}
+          isOnGround={this.state.isOnGround}
+          showPlane={this.state.showPlane}
         />
       </>
     );

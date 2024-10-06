@@ -79,9 +79,7 @@ export default class App extends React.Component<object, AppState> {
       planet: planet,
     });
 
-    fetch(
-      `${API_URL}/planets/${planet.pl_name}/stars?limit=10000&trunk_halfheight=50`
-    )
+    fetch(`${API_URL}/planets/${planet.pl_name}/stars`)
       .then((res) => res.json())
       .then((data) => {
         this.setState({
@@ -118,15 +116,27 @@ export default class App extends React.Component<object, AppState> {
     if (this.state.intervalId != null) clearInterval(this.state.intervalId);
   }
 
+  onViewerClickBack = () => {
+    this.setState({
+      planet: null,
+      stars: null,
+    });
+  };
+
   render() {
     return (
-      <MantineProvider>
+      <MantineProvider defaultColorScheme="dark">
         {this.state.planet == null ? (
           <Selector onSubmit={this.handleSearchSubmit} />
         ) : this.state.stars == null ? (
           <LoadingScreen />
         ) : (
-          <Viewer planet={this.state.planet} stars={this.state.stars} />
+          <Viewer
+            planet={this.state.planet}
+            stars={this.state.stars}
+            notify={this.addNotification}
+            goBack={this.onViewerClickBack}
+          />
         )}
         <Affix position={{ bottom: 20, right: 20 }}>
           {this.state.notifications.map(

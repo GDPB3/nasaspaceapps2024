@@ -1,9 +1,18 @@
 import "@mantine/core/styles.css";
 import React, { useMemo } from "react";
 import { PlanetData, Star } from "../types";
-import { Canvas, extend, ThreeElements, useFrame } from "@react-three/fiber";
+import Color from "color";
 import {
+  Canvas,
+  extend,
+  ThreeElements,
+  useFrame,
+  useThree,
+} from "@react-three/fiber";
+import {
+  GizmoHelper,
   OrbitControls,
+  PerspectiveCamera,
   Plane,
   Stats,
   TrackballControls,
@@ -18,17 +27,28 @@ import {
   IconPlayerPause,
   IconPlayerPlay,
 } from "@tabler/icons-react";
-import { clamp, hsv2rgb, rgb2hsv, wavelength2rgb } from "../tools";
+import {
+  clamp,
+  colorTemperature2rgb,
+  hsv2rgb,
+  rgb2hsv,
+  wavelength2rgb,
+} from "../tools";
 import { fragmentShader, vertexShader } from "./StarMaterial";
 import { color } from "three/webgpu";
 
-const STAR_SIZE = 1;
+const STAR_SIZE = 50_000_000;
 
 function Planet() {
   return (
     <mesh>
       <sphereGeometry args={[0.05, 30, 30]} />
-      <meshBasicMaterial color="red" />
+      <meshBasicMaterial
+        color="gray"
+        transparent={false}
+        depthTest={true}
+        // depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -40,16 +60,15 @@ type DotsProps = {
 };
 
 const calcStarColor = (star: Star): [number, number, number] => {
-  // Wien’s displacement law (https://www.quora.com/How-can-I-derive-an-RGB-value-from-the-color-index-of-stars)
-  const peak_wavelength = 2897771.9 / star.temperature;
-  const rgb = wavelength2rgb(peak_wavelength); // rgb in [0,1]
-  // Convert rgb to hsv, adjust luminance convert back to rgb
-  const hsv = rgb2hsv(...rgb);
-  const luminance_value = clamp(star.lum / 100, 0, 1);
-  const rgb2 = hsv2rgb(hsv[0], hsv[1], luminance_value);
-
-  // convert [0,1] rgb to [0,255] rgb
-  return rgb2.map((x) => x * 255) as [number, number, number];
+  let rgb = { r: 0, g: 0, b: 0 };
+  if (star.wavelength != -1) {
+    rgb = wavelength2rgb(star.wavelength); // rgb in [0,255]
+  } else if (star.temperature != -1) {
+    rgb = colorTemperature2rgb(star.temperature); // rgb in [0,255]
+  } else {
+    rgb = { r: 255, g: 255, b: 255 };
+  }
+  return Object.values(rgb).map((x) => x * 255) as [number, number, number];
 };
 
 function getInfo(stars: Star[]) {
@@ -59,7 +78,7 @@ function getInfo(stars: Star[]) {
   for (const star of stars) {
     _verts.push(...star.pos);
     _colors.push(...calcStarColor(star));
-    _sizes.push(star.radius * STAR_SIZE);
+    _sizes.push(star.radius * (Math.log10(star.lum + 1) / 3 + 1) * STAR_SIZE);
   }
   const vertices = new Float32Array(_verts);
   const colors = new Float32Array(_colors);
@@ -68,8 +87,28 @@ function getInfo(stars: Star[]) {
   return { vertices, colors, sizes };
 }
 
-const textureLoader = new THREE.TextureLoader();
-const starTexture = textureLoader.load("/textures/blended_star.png");
+function create_star_texture(): THREE.Texture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext("2d")!;
+  context.globalAlpha = 0.3;
+  context.filter = "blur(16px)";
+  context.fillStyle = "white";
+  context.beginPath();
+  context.arc(64, 64, 40, 0, 2 * Math.PI);
+  context.fill();
+  context.globalAlpha = 1;
+  context.filter = "blur(7px)";
+  context.fillStyle = "white";
+  context.beginPath();
+  context.arc(64, 64, 16, 0, 2 * Math.PI);
+  context.fill();
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+const starTexture = create_star_texture();
 
 // extend({ StarMaterial });
 
@@ -79,11 +118,11 @@ function Dots(props: DotsProps) {
     [props.stars]
   );
 
-  // console.log(sizes);
-
   return (
     <points>
-      <bufferGeometry attach="geometry">
+      <bufferGeometry
+        attach="geometry"
+        drawRange={{ start: 0, count: props.stars.length }}>
         <bufferAttribute
           attach="attributes-position"
           count={vertices.length / 3}
@@ -103,7 +142,6 @@ function Dots(props: DotsProps) {
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         uniforms={{
-          color: { value: new THREE.Color(0xffffff) },
           pointTexture: { value: starTexture },
         }}
       />
@@ -117,45 +155,108 @@ type PlanetariumProps = {
   autoRotate: boolean;
   onUserInteract?: () => void;
   onUserInteractEnd?: () => void;
+
+  isOnGround: boolean;
+
+  showPlane: boolean;
 };
 
 type PlanetariumState = object;
+
+const plane_size = 1000;
+function MyGridHelper(props: { show: boolean; isOnGround: boolean }) {
+  // // The ?? is in case the camera is not yet initialized don't divide by 0
+  const ref = React.useRef<THREE.GridHelper>(null);
+  // const position = useThree((state) => state.camera.position);
+
+  // const pos_len = position != null ? Math.sqrt(position.length()) + 1 : 1;
+
+  // console.log(pos_len);
+
+  if (props.show) {
+    return (
+      <gridHelper
+        ref={ref}
+        args={[plane_size, plane_size / 2]}
+        position={[0, props.isOnGround ? -1 : 0, 0]}
+        // rotation={[0, 1, 0]}
+      />
+    );
+  } else {
+    return <></>;
+  }
+}
+
+type CameraVectors = {
+  quaternion: [number, number, number, number];
+};
+
+function CameraPositionGetter(props: {
+  onCameraVecsUpdate: (vecs: CameraVectors) => void;
+}) {
+  const { camera } = useThree();
+
+  useFrame(() => {
+    // NOTE: Hopefully this is not too expensive (and gets garbage collected)
+    const quaternion = new THREE.Quaternion(0, 0, 0, 0);
+    camera.getWorldQuaternion(quaternion);
+    props.onCameraVecsUpdate({
+      quaternion: quaternion.toArray(),
+    });
+  });
+
+  return <></>;
+}
+
+const BACKGROUND_COLOUR = "#050505";
+
 export default class Planetarium extends React.Component<
   PlanetariumProps,
   PlanetariumState
 > {
+  camera_vecs: CameraVectors | null = null;
   constructor(props: PlanetariumProps) {
     super(props);
 
     this.state = {};
   }
 
+  getCameraVecs = (): CameraVectors | null => this.camera_vecs;
+
   render() {
     return (
-      <Canvas>
-        <color attach="background" args={["#000000"]} />
+      <Canvas camera={{ far: 100_000_000 }}>
+        <color attach="background" args={[BACKGROUND_COLOUR]} />
+        <Planet />
         <OrbitControls
           enableDamping
+          // onPointerDown={this.props.onUserInteract}
+          // onPointerUp={this.props.onUserInteractEnd}
           onStart={this.props.onUserInteract}
           onEnd={this.props.onUserInteractEnd}
           reverseOrbit
           enableRotate
+          enablePan={false}
           autoRotate={this.props.autoRotate}
-          maxDistance={0.001}
-          enableZoom={false} // disable zoom (scroll)
+          minDistance={this.props.isOnGround ? 0 : 0.5}
+          maxDistance={this.props.isOnGround ? 0.001 : Infinity}
+          // disable zoom (scroll) when on the ground
+          enableZoom={!this.props.isOnGround}
         />
         <Dots
           stars={this.props.stars}
           // onHover={(id) => this.setState({ hovered: id })}
           // onLeave={() => this.setState({ hovered: null })}
         />
-        <gridHelper
-          args={[2000, 2000]}
-          position={[0, -1, 0]}
-          // rotation={[0, 1, 0]}
+        <fog attach="fog" args={[BACKGROUND_COLOUR, 0, 100]} />
+        <MyGridHelper
+          show={this.props.showPlane}
+          isOnGround={this.props.isOnGround}
         />
-        <Stats />
-        <Planet />
+        <CameraPositionGetter
+          onCameraVecsUpdate={(vecs) => (this.camera_vecs = vecs)}
+        />
+        {/* <Stats /> */}
       </Canvas>
     );
   }

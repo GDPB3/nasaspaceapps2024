@@ -10,7 +10,8 @@ out vec3 vColor;
 
 void main() {
   vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-  gl_PointSize = scale * ( 300.0 / - mvPosition.z );
+  // Minimum of 5 pixels
+  gl_PointSize = max(scale * ( 300.0 / - mvPosition.z ), 5.0);
   gl_Position = projectionMatrix * mvPosition;
   vColor = color;
 }`;
@@ -20,7 +21,7 @@ in vec3 vColor;
 uniform sampler2D pointTexture;
 
 void main() {
-  if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
+  // if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
   gl_FragColor = vec4(vColor, 1.0) * texture2D( pointTexture, gl_PointCoord );
 }`;
 // export class StarMaterial extends ShaderMaterial {

@@ -20,4 +20,5 @@ export type Star = {
   mass: number;
   age: number;
   radius: number;
+  wavelength: number;
 };
