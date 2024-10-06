@@ -47,9 +47,9 @@ def change_pole_for_projection(pole:list[int], pos:list[float]) -> list[float]:
     return rotation.apply(pos).tolist()
 
 def draw_chart(stars:list[StarData], output:str, position: list[int] = default_pole):
-    chart_size = 20
+    chart_size = 80
     min_star_size = 2
-    size_factor = 100
+    size_factor = chart_size*8
 
     print("Resize stars...")
     stars = [StarData(
@@ -97,7 +97,7 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
     ) for star in stars if star.pos[2] < 1]
 
     fig, ax = plt.subplots(figsize=(chart_size, chart_size))
-    
+
     border = plt.Circle((0, 0), 1, color='navy', fill=True)
     ax.add_patch(border)
 
@@ -128,9 +128,9 @@ if __name__ == "__main__":
     # stars = pkl.load(open("data.pkl", "rb"))
     stars = json.load(open("smth.json", "r"))
     stars = [StarData(**star) for star in stars]
-    draw_chart(stars, 'charts/chart.png')
-    draw_chart(stars, 'charts/chart1.png', position=[1, 0, 0])
-    draw_chart(stars, 'charts/chart2.png', position=[0, 1, 0])
-    draw_chart(stars, 'charts/chart3.png', position=[0, 0, -1])
-    draw_chart(stars, 'charts/chart4.png', position=[-1, 0, 0])
-    draw_chart(stars, 'charts/chart5.png', position=[0, -1, 0])
+    draw_chart(stars, 'charts/bchart.png')
+    draw_chart(stars, 'charts/bchart1.png', position=[1, 0, 0])
+    draw_chart(stars, 'charts/bchart2.png', position=[0, 1, 0])
+    draw_chart(stars, 'charts/bchart3.png', position=[0, 0, -1])
+    draw_chart(stars, 'charts/bchart4.png', position=[-1, 0, 0])
+    draw_chart(stars, 'charts/bchart5.png', position=[0, -1, 0])

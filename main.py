@@ -33,18 +33,28 @@ async def planet_names(query:str="", count:int=len(planets_list)):
     else:
         return [planet.pl_name for planet in planets_list if query.lower() in planet.pl_name.lower()][:count]
 
-@app.get("/planets/file", response_model=list[StarData])
-async def get_stars_from_planet2(planet:str, limit:int = 100000) -> list[StarData]:
-    with open("data.pkl", "rb") as f:
-        data = pickle.load(f)
-    return data
+
+star_cache_size = 5
+stars_cache : list[tuple[tuple[str, int], list[StarData]]] = []
 
 @app.get("/planets/{planet}/stars", response_model=list[StarData])
-async def get_stars_from_planet(planet:str, limit:int = 1000000) -> list[StarData]:
+async def get_stars_from_planet(planet:str, limit:int = -1) -> list[StarData]:
     planets = [planet_o for planet_o in planets_list if planet.lower() == planet_o.pl_name.lower()]
     if len(planets) != 1: return []
 
+    # Check for cache
+    for (entry_name, entry_limit), entry_data in stars_cache:
+        if (entry_name == planet and ((limit != -1 and limit <= entry_limit) or entry_limit == -1)):
+            return entry_data
+
     results = await get_stars_from_planet_coords(planets[0], row_limit=limit) 
+
+    # Save in cache
+    if len(stars_cache) == star_cache_size:
+        stars_cache.pop(0)
+
+    stars_cache.append(((planet, limit), results))
+
     return results
 
 @app.get("/pablo", response_model=PlanetData) 

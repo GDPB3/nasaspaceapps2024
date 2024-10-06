@@ -1,4 +1,7 @@
-venv
+venv/*
+__pycache__/*
+charts/*
 *.png
-__pycache__
 *.json
+data.pkl
+planets.p
