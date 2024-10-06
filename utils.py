@@ -32,29 +32,29 @@ def mark_valid(base_pos:np.ndarray, stars: np.ndarray, mark_array: np.ndarray) -
     COLOUR = 4
 
     for i in range(0, len(stars)):
-        # coordenadas raras -> coordenadas cartesianas
+        # Change coord system
         ra = math.radians(stars[i][RA])
         dec = math.radians(stars[i][DEC])
         dist = stars[i][DIST]
         pos = ra_to_car(ra, dec, dist) - base_pos
 
-        # Si no está en el círculo -> basura
+        # Remove it if its out of the sphere centered on the planet 
         if (pos[0]**2 + pos[1]**2 + pos[2]**2) >= TRUNK_HALFSIZE**2:
             mark_array[i] = False 
             continue
 
-        # Marcamos como váilda 
+        # Mark it as valid
         mark_array[i] = True
 
-        # Escalamos coordenadas 
+        # Scale the coords 
         stars[i][RA] = pos[0] * GALAXY_SCALE
         stars[i][DEC] = pos[1] * GALAXY_SCALE
         stars[i][DIST] = pos[2] * GALAXY_SCALE
 
-        # Cambiamos unidad del radio de las estrellas
+        # Convert the sun radius to parsecs (for ease of use on the frontend) 
         stars[i][RADIUS] = stars[i][RADIUS] * GALAXY_SCALE * SUN_R_TO_PARSEC
 
-        # Coloreh
+        # Convert the wavelength
         stars[i][COLOUR] = 1000.0 / stars[i][COLOUR]
 
 
