@@ -38,7 +38,7 @@ def draw_chart(_stars:list[StarData], chart_size:int, current_rotation:tuple[flo
         max_value=TRUNK_HALFSIZE*GALAXY_SCALE
     )
 
-    # Change the pole for the projection
+    # # Change the pole for the projection
     for star in stars:
         star.pos = change_pole_for_projection(current_rotation, star.pos)
 
