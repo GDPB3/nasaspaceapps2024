@@ -36,7 +36,7 @@ def mark_valid(base_pos:np.ndarray, stars: np.ndarray, mark_array: np.ndarray) -
 
         # Si no está en el círculo -> basura
         if (pos[0]**2 + pos[1]**2 + pos[2]**2) >= TRUNK_HALFSIZE**2:
-            mark_array[i] = True 
+            mark_array[i] = False 
             continue
 
         # Marcamos como váilda 
