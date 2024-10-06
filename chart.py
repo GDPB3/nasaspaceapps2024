@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
 from models import PlanetData, StarData
-from utils import TRUNK_HALFSIZE, GALAXY_SCALE, SUN_R_TO_PARSEC
+# from utils import TRUNK_HALFSIZE, GALAXY_SCALE, SUN_R_TO_PARSEC
+from utils import SUN_R_TO_PARSEC
 import json
 from scipy.spatial.transform import Rotation as R
 
 default_pole = [0, 0, 1]
+
+TRUNK_HALFSIZE = 50
+GALAXY_SCALE = 10000
 
 def map_star_data_to_unit(stars: list[StarData], max_value:float) -> list[StarData]:
     scaled_unit = 1 / max_value
@@ -12,10 +16,9 @@ def map_star_data_to_unit(stars: list[StarData], max_value:float) -> list[StarDa
         lum=star.lum,
         pos=[pos_value*scaled_unit for pos_value in star.pos],
         temperature=star.temperature,
-        wavelength=
         mass=star.mass,
         age=star.age,
-        radius=star.radius
+        radius=star.radius,
         wavelength=star.wavelength
     ) for star in stars]
 
@@ -49,6 +52,9 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
     min_star_size = 0
     size_factor = 100
 
+    max_size_in_chart = 100
+    limiting_factor = 10
+
     print("Resize stars...")
     stars = [StarData(
         lum=star.lum,
@@ -63,6 +69,10 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
     print("Filtering stars by radius...")
     # filter out stars by radius
     stars = [star for star in stars if star.radius >= min_star_size and star.radius <= max_star_size]
+
+    # print("Filtering stars by lum...")
+    # # filter out stars by lum
+    # stars = [star for star in stars if star.lum <= limiting_factor]
 
     print("Mapping star data to unit...")
     # Convert the star data to a format that can be used by the chart [0, 1]
@@ -100,6 +110,9 @@ def draw_chart(stars:list[StarData], output:str, position: list[int] = default_p
     ax.add_patch(border)
 
     marker_size = [star.radius*size_factor for star in stars_2d]
+
+    # marker_size = [max_size_in_chart*10 ** (star.lum / -2.5) for star in stars_2d]
+    # marker_size = [star.lum*size_factor for star in stars_2d]
 
     print("Drawing stars...")
     ax.scatter(
