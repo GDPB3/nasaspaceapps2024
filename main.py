@@ -35,7 +35,7 @@ async def planet_names(query:str="", count:int=len(planets_list)):
         return [planet.pl_name for planet in planets_list if query.lower() in planet.pl_name.lower()][:count]
 
 
-max_star_cache_size = 5
+max_star_cache_size = 50
 
 @app.get("/planets/{planet}/stars", response_model=list[StarData])
 async def get_stars_from_planet(planet:str, limit:int = -1) -> list[StarData]:
