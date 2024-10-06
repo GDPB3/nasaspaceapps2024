@@ -1,8 +1,13 @@
 import "@mantine/core/styles.css";
 import React, { useMemo } from "react";
 import { PlanetData, Star } from "../types";
-import { Canvas, ThreeElements, useFrame } from "@react-three/fiber";
-import { OrbitControls, Stats, TrackballControls } from "@react-three/drei";
+import { Canvas, extend, ThreeElements, useFrame } from "@react-three/fiber";
+import {
+  OrbitControls,
+  Plane,
+  Stats,
+  TrackballControls,
+} from "@react-three/drei";
 import * as THREE from "three";
 import { Affix, Text, ActionIcon, Group, ThemeIcon } from "@mantine/core";
 import PlanetInfo from "../components/PlanetInfo";
@@ -14,8 +19,11 @@ import {
   IconPlayerPlay,
 } from "@tabler/icons-react";
 import { clamp, hsv2rgb, rgb2hsv, wavelength2rgb } from "../tools";
+import { fragmentShader, vertexShader } from "../components/StarMaterial";
+import { color } from "three/webgpu";
+import Planetarium from "../components/Planetarium";
 
-const STAR_SIZE = 0.3;
+const STAR_SIZE = 1;
 
 function Planet() {
   return (
@@ -32,75 +40,6 @@ type DotsProps = {
   onLeave: () => void;
 };
 
-const calcStarColor = (star: Star): [number, number, number] => {
-  // Wien’s displacement law (https://www.quora.com/How-can-I-derive-an-RGB-value-from-the-color-index-of-stars)
-  const peak_wavelength = 2897771.9 / star.temperature;
-  const rgb = wavelength2rgb(peak_wavelength); // rgb in [0,1]
-  // Convert rgb to hsv, adjust luminance convert back to rgb
-  const hsv = rgb2hsv(...rgb);
-  const luminance_value = clamp(star.lum / 100, 0, 1);
-  const rgb2 = hsv2rgb(hsv[0], hsv[1], luminance_value);
-
-  // convert [0,1] rgb to [0,255] rgb
-  return rgb2.map((x) => x * 255) as [number, number, number];
-};
-
-function getInfo(stars: Star[]) {
-  const _verts = [];
-  const _colors = [];
-  const _sizes = [];
-  for (const star of stars) {
-    _verts.push(...star.pos);
-    _colors.push(...calcStarColor(star));
-    _sizes.push(0);
-  }
-  const vertices = new Float32Array(_verts);
-  const colors = new Float32Array(_colors);
-  const sizes = new Float32Array(_sizes);
-
-  return { vertices, colors, sizes };
-}
-
-const textureLoader = new THREE.TextureLoader();
-const starTexture = textureLoader.load("/textures/blended_star.png");
-
-function Dots(props: { stars: Star[] }) {
-  const { vertices, colors, sizes } = useMemo(
-    () => getInfo(props.stars),
-    [props.stars]
-  );
-
-  // console.log(sizes);
-
-  return (
-    <points>
-      <bufferGeometry attach="geometry">
-        <bufferAttribute
-          attach="attributes-position"
-          count={vertices.length / 3}
-          array={vertices}
-          itemSize={3}
-          onUpdate={(self) => {
-            self.needsUpdate = true;
-          }}
-        />
-        {/* <bufferAttribute attach="attributes-size" args={[sizes, 1]} /> */}
-        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
-        {/* <starTexture /> */}
-      </bufferGeometry>
-      <pointsMaterial
-        map={starTexture}
-        transparent
-        sizeAttenuation
-        // size={STAR_SIZE}
-        depthTest={false}
-        blending={THREE.AdditiveBlending}
-        vertexColors
-      />
-    </points>
-  );
-}
-
 type ViewerProps = {
   planet: PlanetData;
   stars: Star[];
@@ -110,12 +49,18 @@ type ViewerProps = {
   rotateAgainTime?: number;
 };
 
-const DEFAULT_ROTATE_AGAIN_TIME = 5;
+const DEFAULT_ROTATE_AGAIN_TIME = 1;
+
+enum RotationPauseReason {
+  USER_INTERACTION,
+  BUTTON,
+}
 
 type ViewerState = {
   hovered: number | null;
   rotate: boolean;
   rotateAgainTimeoutId: number | null;
+  pauseReason: RotationPauseReason | null;
 };
 export default class Viewer extends React.Component<ViewerProps, ViewerState> {
   constructor(props: ViewerProps) {
@@ -123,23 +68,52 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
 
     this.state = {
       hovered: null,
+
+      // Rotation control
       rotate: true,
       rotateAgainTimeoutId: null,
+      pauseReason: null,
     };
   }
 
+  // Rotation control
   onUserInteract = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const new_state: any = {}; // i want to add parameters after the fact!!
+    if (this.state.rotateAgainTimeoutId != null) {
+      clearTimeout(this.state.rotateAgainTimeoutId);
+      new_state.rotateAgainTimeoutId = null;
+    }
+    if (this.state.pauseReason !== RotationPauseReason.BUTTON) {
+      new_state.pauseReason = RotationPauseReason.USER_INTERACTION;
+      new_state.rotate = false;
+    }
+
+    this.setState(new_state);
+  };
+  onUserInteractEnd = () => {
+    if (this.state.pauseReason === RotationPauseReason.USER_INTERACTION) {
+      this.setState({
+        rotateAgainTimeoutId: setTimeout(() => {
+          this.setState({
+            rotate: true,
+            rotateAgainTimeoutId: null,
+            pauseReason: RotationPauseReason.BUTTON,
+          });
+        }, this.props.rotateAgainTime ?? DEFAULT_ROTATE_AGAIN_TIME * 1000),
+      });
+    }
+  };
+  onClickPlayPause = () => {
     if (this.state.rotateAgainTimeoutId != null) {
       clearTimeout(this.state.rotateAgainTimeoutId);
     }
-    this.setState({ rotate: false, rotateAgainTimeoutId: null });
-  };
-  onUserInteractEnd = () => {
-    const timeout = setTimeout(() => {
-      this.setState({ rotate: true });
-    }, this.props.rotateAgainTime ?? DEFAULT_ROTATE_AGAIN_TIME * 1000);
     this.setState({
-      rotateAgainTimeoutId: timeout,
+      rotate: !this.state.rotate,
+      rotateAgainTimeoutId: null,
+      // Set the pause reason to button if stopping rotation (if we're currently rotating),
+      // otherwise, it's null
+      pauseReason: this.state.rotate ? RotationPauseReason.BUTTON : null,
     });
   };
 
@@ -159,15 +133,17 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             <ActionIcon
               color="blue"
               radius="xl"
-              onClick={() => {
-                if (this.state.rotateAgainTimeoutId != null) {
-                  clearTimeout(this.state.rotateAgainTimeoutId);
-                }
-                this.setState({
-                  rotate: !this.state.rotate,
-                  rotateAgainTimeoutId: null,
-                });
-              }}>
+              onClick={this.onClickPlayPause}>
+              {this.state.rotate ? (
+                <IconPlayerPause size={16} />
+              ) : (
+                <IconPlayerPlay size={16} />
+              )}
+            </ActionIcon>
+            <ActionIcon
+              color="blue"
+              radius="xl"
+              onClick={this.onClickPlayPause}>
               {this.state.rotate ? (
                 <IconPlayerPause size={16} />
               ) : (
@@ -177,26 +153,12 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             <PlanetInfo planet={this.props.planet} />
           </Group>
         </Affix>
-        <Canvas>
-          <color attach="background" args={["#000000"]} />
-          <OrbitControls
-            enableDamping
-            onStart={this.onUserInteract}
-            onEnd={this.onUserInteractEnd}
-            reverseOrbit
-            enableRotate
-            // autoRotate={this.state.rotate}
-            maxDistance={0.001}
-            enableZoom={false} // disable zoom (scroll)
-          />
-          <Dots
-            stars={this.props.stars}
-            // onHover={(id) => this.setState({ hovered: id })}
-            // onLeave={() => this.setState({ hovered: null })}
-          />
-          <Stats />
-          <Planet />
-        </Canvas>
+        <Planetarium
+          stars={this.props.stars}
+          autoRotate={this.state.rotate}
+          onUserInteract={this.onUserInteract}
+          onUserInteractEnd={this.onUserInteractEnd}
+        />
       </>
     );
   }

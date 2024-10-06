@@ -1,41 +1,39 @@
-import { ShaderMaterial } from "three";
-import { ReactThreeFiber } from "@react-three/fiber";
+// import { ShaderMaterial, Color, TextureLoader } from "three";
+// import { extend, ReactThreeFiber } from "@react-three/fiber";
+// import { color } from "three/webgpu";
 
-class StarfieldMaterial extends ShaderMaterial {
-  constructor() {
-    super({
-      uniforms: { time: { value: 0.0 }, fade: { value: 1.0 } },
-      vertexShader: /* glsl */ `
-      uniform float time;
-      attribute float size;
-      varying vec3 vColor;
-      void main() {
-        vColor = color;
-        vec4 mvPosition = modelViewMatrix * vec4(position, 0.5);
-        gl_PointSize = size * (30.0 / -mvPosition.z) * (3.0 + sin(time + 100.0));
-        gl_Position = projectionMatrix * mvPosition;
-      }`,
-      fragmentShader: /* glsl */ `
-      uniform sampler2D pointTexture;
-      uniform float fade;
-      varying vec3 vColor;
-      void main() {
-        float opacity = 1.0;
-        if (fade == 1.0) {
-          float d = distance(gl_PointCoord, vec2(0.5, 0.5));
-          opacity = 1.0 / (1.0 + exp(16.0 * (d - 0.25)));
-        }
-        gl_FragColor = vec4(vColor, opacity);
+export const vertexShader = /* glsl */ `
+attribute float scale;
+attribute vec3 color;
 
-        #include <tonemapping_fragment>
-	      #include <colorspace_fragment>
-      }`,
-    });
-  }
-}
+out vec3 vColor;
 
-declare module "@react-three/fiber" {
-  interface IntrinsicElements {
-    starfieldMaterial: ReactThreeFiber.MaterialNode<StarfieldMaterial, []>;
-  }
-}
+void main() {
+  vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+  gl_PointSize = scale * ( 300.0 / - mvPosition.z );
+  gl_Position = projectionMatrix * mvPosition;
+  vColor = color;
+}`;
+
+export const fragmentShader = /* glsl */ `
+in vec3 vColor;
+uniform sampler2D pointTexture;
+
+void main() {
+  if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.475) discard;
+  gl_FragColor = vec4(vColor, 1.0) * texture2D( pointTexture, gl_PointCoord );
+}`;
+// export class StarMaterial extends ShaderMaterial {
+//   constructor() {
+//     super({
+//       uniforms: {
+//         color: { value: new Color(0xffffff) },
+//         pointTexture: {
+//           value: new TextureLoader().load("/textures/blended_star.png"),
+//         },
+//       },
+//       vertexShader
+//       fragmentShader: /* glsl */ `
+
+//   }
+// }
