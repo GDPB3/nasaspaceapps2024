@@ -1,28 +1,9 @@
 import "@mantine/core/styles.css";
-import React, { useMemo } from "react";
+import React from "react";
 import { PlanetData, Star } from "../types";
-import { Canvas, extend, ThreeElements, useFrame } from "@react-three/fiber";
-import {
-  OrbitControls,
-  Plane,
-  Stats,
-  TrackballControls,
-} from "@react-three/drei";
-import * as THREE from "three";
-import {
-  Affix,
-  Text,
-  ActionIcon,
-  Group,
-  ThemeIcon,
-  Space,
-  rem,
-} from "@mantine/core";
+import { Affix, Text, ActionIcon, Group, Space, rem } from "@mantine/core";
 import PlanetInfo from "../components/PlanetInfo";
 import {
-  IconAccessible,
-  IconAccessibleOff,
-  IconAlien,
   IconArrowLeft,
   IconCamera,
   IconCrop11,
@@ -32,9 +13,6 @@ import {
   IconWorld,
   IconWorldUpload,
 } from "@tabler/icons-react";
-import { clamp, hsv2rgb, rgb2hsv, wavelength2rgb } from "../tools";
-import { fragmentShader, vertexShader } from "../components/StarMaterial";
-import { color } from "three/webgpu";
 import Planetarium from "../components/Planetarium";
 import { API_URL } from "../consts";
 

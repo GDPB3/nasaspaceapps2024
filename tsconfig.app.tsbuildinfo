@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/consts.ts","./src/main.tsx","./src/tools.ts","./src/types.ts","./src/vite-env.d.ts","./src/components/planetinfo.tsx","./src/components/planetarium.tsx","./src/components/search.tsx","./src/components/starmaterial.tsx","./src/pages/loadingscreen.tsx","./src/pages/selector.tsx","./src/pages/viewer.tsx"],"version":"5.6.2"}

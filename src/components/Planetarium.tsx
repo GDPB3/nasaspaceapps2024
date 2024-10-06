@@ -1,40 +1,10 @@
 import "@mantine/core/styles.css";
-import React, { KeyboardEventHandler, MouseEventHandler, useMemo } from "react";
-import { PlanetData, Star } from "../types";
-import Color from "color";
-import {
-  Canvas,
-  extend,
-  ThreeElements,
-  ThreeEvent,
-  useFrame,
-  useThree,
-} from "@react-three/fiber";
-import {
-  GizmoHelper,
-  OrbitControls,
-  PerspectiveCamera,
-  Plane,
-  Stats,
-  TrackballControls,
-} from "@react-three/drei";
+import React, { useMemo } from "react";
+import { Star } from "../types";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { Affix, Text, ActionIcon, Group, ThemeIcon } from "@mantine/core";
-import PlanetInfo from "./PlanetInfo";
-import {
-  IconAccessible,
-  IconAccessibleOff,
-  IconAlien,
-  IconPlayerPause,
-  IconPlayerPlay,
-} from "@tabler/icons-react";
-import {
-  clamp,
-  colorTemperature2rgb,
-  hsv2rgb,
-  rgb2hsv,
-  wavelength2rgb,
-} from "../tools";
+import { colorTemperature2rgb, wavelength2rgb } from "../tools";
 import { fragmentShader, vertexShader } from "./StarMaterial";
 
 const STAR_SIZE = 50_000_000;
@@ -225,11 +195,6 @@ export default class Planetarium extends React.Component<
   }
 
   getCameraVecs = (): CameraVectors | null => this.camera_vecs;
-
-  onUserClick = (e: ThreeEvent<MouseEvent>) => {
-    // console.log(e);
-    // console.log(e.camera);
-  };
 
   handleKeyDown = (e: React.KeyboardEvent) => {
     console.log(e);

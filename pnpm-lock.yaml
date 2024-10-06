@@ -29,6 +29,9 @@ dependencies:
   color:
     specifier: ^4.2.3
     version: 4.2.3
+  dotenv:
+    specifier: ^16.4.5
+    version: 16.4.5
   postcss-preset-mantine:
     specifier: ^1.17.0
     version: 1.17.0(postcss@8.4.47)
@@ -49,6 +52,9 @@ devDependencies:
   '@eslint/js':
     specifier: ^9.11.1
     version: 9.12.0
+  '@types/node':
+    specifier: ^22.7.4
+    version: 22.7.4
   '@types/react':
     specifier: ^18.3.10
     version: 18.3.11
@@ -78,7 +84,7 @@ devDependencies:
     version: 8.8.0(eslint@9.12.0)(typescript@5.6.2)
   vite:
     specifier: ^5.4.8
-    version: 5.4.8
+    version: 5.4.8(@types/node@22.7.4)
 
 packages:
 
@@ -2998,7 +3004,6 @@ packages:
     resolution: {integrity: sha512-y+NPi1rFzDs1NdQHHToqeiX2TIS79SWEAw9GYhkkx8bD0ChpfqC+n2j5OXOCpzfojBEBt6DnEnnG9MY0zk1XLg==}
     dependencies:
       undici-types: 6.19.8
-    dev: false
 
   /@types/offscreencanvas@2019.7.3:
     resolution: {integrity: sha512-ieXiYmgSRXUDeOntE1InxjWyvEelZGP63M+cGuquuRLuIKKT1osnkXjxev9B7d1nXSug5vpunx+gNlbVxMlC9A==}
@@ -3225,7 +3230,7 @@ packages:
       vite: ^4 || ^5
     dependencies:
       '@swc/core': 1.7.26
-      vite: 5.4.8
+      vite: 5.4.8(@types/node@22.7.4)
     transitivePeerDependencies:
       - '@swc/helpers'
     dev: true
@@ -3861,6 +3866,11 @@ packages:
 
   /detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
+    dev: false
+
+  /dotenv@16.4.5:
+    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+    engines: {node: '>=12'}
     dev: false
 
   /draco3d@1.5.7:
@@ -6572,7 +6582,6 @@ packages:
 
   /undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
-    dev: false
 
   /unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}
@@ -6722,7 +6731,7 @@ packages:
     engines: {node: '>= 0.8'}
     dev: false
 
-  /vite@5.4.8:
+  /vite@5.4.8(@types/node@22.7.4):
     resolution: {integrity: sha512-FqrItQ4DT1NC4zCUqMB4c4AZORMKIa0m8/URVCZ77OZ/QSNeJ54bU1vrFADbDsuwfIPcgknRkmqakQcgnL4GiQ==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -6753,6 +6762,7 @@ packages:
       terser:
         optional: true
     dependencies:
+      '@types/node': 22.7.4
       esbuild: 0.21.5
       postcss: 8.4.47
       rollup: 4.24.0

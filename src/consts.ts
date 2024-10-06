@@ -1,1 +1,3 @@
-export const API_URL = "http://10.234.0.112:8000";
+import "dotenv/config";
+
+export const API_URL: string = process.env.API_URL || "http://localhost:8000";

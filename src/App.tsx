@@ -7,12 +7,7 @@ import Selector from "./pages/Selector";
 import Viewer from "./pages/Viewer";
 import LoadingScreen from "./pages/LoadingScreen";
 import { API_URL } from "./consts";
-import {
-  Icon3dCubeSphere,
-  IconAlertSmall,
-  IconAlertTriangle,
-  IconAlertTriangleFilled,
-} from "@tabler/icons-react";
+import { Icon3dCubeSphere, IconAlertSmall } from "@tabler/icons-react";
 
 type Notification = {
   title: string;
