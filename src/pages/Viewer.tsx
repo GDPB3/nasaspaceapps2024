@@ -1,7 +1,7 @@
 import "@mantine/core/styles.css";
 import React from "react";
 import { PlanetData, Star } from "../types";
-import { Affix, Text, ActionIcon, Group, Space, rem } from "@mantine/core";
+import { Affix, ActionIcon, Group, Space, rem } from "@mantine/core";
 import PlanetInfo from "../components/PlanetInfo";
 import {
   IconArrowLeft,
