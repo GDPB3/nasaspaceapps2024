@@ -21,7 +21,7 @@ type AppState = {
   planet: PlanetData | null;
   stars: Star[] | null;
   notifications: Notification[];
-  intervalId: number | null;
+  intervalId: NodeJS.Timeout | null;
   timer: number;
 };
 

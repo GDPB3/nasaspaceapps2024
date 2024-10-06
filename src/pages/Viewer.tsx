@@ -47,7 +47,7 @@ type ViewerState = {
 
   // Rotation control
   rotate: boolean;
-  rotateAgainTimeoutId: number | null;
+  rotateAgainTimeoutId: NodeJS.Timeout | null;
   pauseReason: RotationPauseReason | null;
 
   // Control whether the camera is outside the planet (false) or on the ground (true)
