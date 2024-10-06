@@ -7,8 +7,43 @@ type PlanetCardProps = {
   planet: PlanetData;
 };
 
-const handle_number = (num: number): string =>
-  num === -1 ? "unknown" : num.toString();
+const handle_number = (num: number): string => {
+  if (num < 0) return "unknown";
+
+  if (Number.isInteger(num)) return num.toString();
+
+  return num.toFixed(2);
+};
+
+function InfoElement(props: {
+  value: string;
+  value_long: string;
+  unit: string;
+  unit_long: string;
+}) {
+  return (
+    <>
+      <HoverCard shadow="md" openDelay={0}>
+        <HoverCard.Target>
+          <u>
+            <b>{props.value}</b>
+          </u>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <Text size="sm">{props.value_long}</Text>
+        </HoverCard.Dropdown>
+      </HoverCard>{" "}
+      <HoverCard shadow="md" openDelay={0}>
+        <HoverCard.Target>
+          <u>{props.unit}</u>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <Text size="sm">{props.unit_long}</Text>
+        </HoverCard.Dropdown>
+      </HoverCard>
+    </>
+  );
+}
 
 export default class PlanetCard extends React.Component<
   PlanetCardProps,
@@ -47,18 +82,50 @@ export default class PlanetCard extends React.Component<
 
             <Flex mt="md" justify="space-between">
               <Text size="sm" ta="center">
-                <b>{handle_number(this.props.planet.st_rotp)}</b> rotation
+                <InfoElement
+                  value={handle_number(this.props.planet.st_rotp)}
+                  value_long={`That translates to ${handle_number(
+                    this.props.planet.st_rotp * 24
+                  )} hours`}
+                  unit="d."
+                  unit_long="earth days"
+                />{" "}
+                rotation
               </Text>
               <Text size="sm" ta="center">
-                <b>{handle_number(this.props.planet.pl_orbper)}</b> orbit
+                <InfoElement
+                  value={handle_number(this.props.planet.pl_orbper)}
+                  value_long={`That translates to ${handle_number(
+                    this.props.planet.pl_orbper * 24
+                  )} hours`}
+                  unit="d."
+                  unit_long="earth days"
+                />{" "}
+                orbit
               </Text>
             </Flex>
             <Flex mt="md" justify="space-between">
               <Text size="sm" ta="center">
-                <b>{handle_number(this.props.planet.pl_rade)}</b> radius
+                <InfoElement
+                  value={handle_number(this.props.planet.pl_rade)}
+                  value_long={`That translates to ${handle_number(
+                    this.props.planet.pl_rade * 6371
+                  )} km`}
+                  unit="e.r."
+                  unit_long="earth radii"
+                />{" "}
+                radius
               </Text>
               <Text size="sm" ta="center">
-                <b>{handle_number(this.props.planet.pl_masse)}</b> mass
+                <InfoElement
+                  value={handle_number(this.props.planet.pl_masse)}
+                  value_long={`That translates to ${handle_number(
+                    this.props.planet.pl_masse * 5.972
+                  )} × 10²⁴ kg`}
+                  unit="e.m."
+                  unit_long="earth masses"
+                />{" "}
+                mass
               </Text>
               <Text size="sm" ta="center">
                 <b>{handle_number(this.props.planet.sy_mnum)}</b> moons

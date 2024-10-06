@@ -6,6 +6,13 @@ import type { PlanetData } from "../types";
 
 type SearchProps = {
   onSubmit: (planet: PlanetData) => void;
+  notify: (
+    title: string,
+    message: string,
+    icon: React.ReactNode,
+    time: number,
+    color: string
+  ) => void;
 };
 type SearchState = {
   search: string;
@@ -51,6 +58,16 @@ export default class Search extends React.Component<SearchProps, SearchState> {
         this.setState({
           results: data,
         });
+      })
+      .catch((err) => {
+        console.error(err);
+        this.props.notify(
+          "Error",
+          "Failed to search for planets",
+          <IconUfo />,
+          5,
+          "red"
+        );
       });
   };
 

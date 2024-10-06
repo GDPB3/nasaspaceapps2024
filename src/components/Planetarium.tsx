@@ -1,11 +1,12 @@
 import "@mantine/core/styles.css";
-import React, { useMemo } from "react";
+import React, { KeyboardEventHandler, MouseEventHandler, useMemo } from "react";
 import { PlanetData, Star } from "../types";
 import Color from "color";
 import {
   Canvas,
   extend,
   ThreeElements,
+  ThreeEvent,
   useFrame,
   useThree,
 } from "@react-three/fiber";
@@ -35,7 +36,6 @@ import {
   wavelength2rgb,
 } from "../tools";
 import { fragmentShader, vertexShader } from "./StarMaterial";
-import { color } from "three/webgpu";
 
 const STAR_SIZE = 50_000_000;
 
@@ -155,6 +155,7 @@ type PlanetariumProps = {
   autoRotate: boolean;
   onUserInteract?: () => void;
   onUserInteractEnd?: () => void;
+  onPressSpace?: () => void;
 
   isOnGround: boolean;
 
@@ -189,6 +190,7 @@ function MyGridHelper(props: { show: boolean; isOnGround: boolean }) {
 
 type CameraVectors = {
   quaternion: [number, number, number, number];
+  distance: [number, number, number];
 };
 
 function CameraPositionGetter(props: {
@@ -202,6 +204,7 @@ function CameraPositionGetter(props: {
     camera.getWorldQuaternion(quaternion);
     props.onCameraVecsUpdate({
       quaternion: quaternion.toArray(),
+      distance: camera.position.toArray(),
     });
   });
 
@@ -223,9 +226,32 @@ export default class Planetarium extends React.Component<
 
   getCameraVecs = (): CameraVectors | null => this.camera_vecs;
 
+  onUserClick = (e: ThreeEvent<MouseEvent>) => {
+    // console.log(e);
+    // console.log(e.camera);
+  };
+
+  handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log(e);
+    if (e.key === " ") {
+      this.props.onPressSpace?.();
+    }
+  };
+
   render() {
     return (
-      <Canvas camera={{ far: 100_000_000 }}>
+      <Canvas
+        raycaster={{
+          params: {
+            Points: { threshold: 100 },
+            Mesh: {},
+            Line: { threshold: 1 },
+            LOD: {},
+            Sprite: {},
+          },
+        }}
+        camera={{ far: 100_000_000 }}
+        onKeyDown={this.handleKeyDown}>
         <color attach="background" args={[BACKGROUND_COLOUR]} />
         <Planet />
         <OrbitControls

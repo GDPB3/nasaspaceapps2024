@@ -90,7 +90,7 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
       hovered: null,
 
       // Rotation control
-      rotate: true,
+      rotate: false,
       rotateAgainTimeoutId: null,
       pauseReason: null,
 
@@ -276,6 +276,11 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             <IconArrowLeft size={16} />
           </ActionIcon>
         </Affix>
+        <Affix position={{ bottom: 20, left: 20 }}>
+          <ActionIcon color="blue" radius="xl" onClick={this.props.goBack}>
+            <IconArrowLeft size={16} />
+          </ActionIcon>
+        </Affix>
         <Planetarium
           ref={(instance) => {
             this.child = instance;
@@ -284,6 +289,7 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
           autoRotate={this.state.rotate}
           onUserInteract={this.onUserInteract}
           onUserInteractEnd={this.onUserInteractEnd}
+          onPressSpace={this.onClickPlayPause}
           isOnGround={this.state.isOnGround}
           showPlane={this.state.showPlane}
         />

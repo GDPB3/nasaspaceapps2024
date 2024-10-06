@@ -127,7 +127,10 @@ export default class App extends React.Component<object, AppState> {
     return (
       <MantineProvider defaultColorScheme="dark">
         {this.state.planet == null ? (
-          <Selector onSubmit={this.handleSearchSubmit} />
+          <Selector
+            onSubmit={this.handleSearchSubmit}
+            notify={this.addNotification}
+          />
         ) : this.state.stars == null ? (
           <LoadingScreen />
         ) : (
@@ -139,7 +142,7 @@ export default class App extends React.Component<object, AppState> {
           />
         )}
         <Affix position={{ bottom: 20, right: 20 }}>
-          {this.state.notifications.map(
+          {this.state.notifications.reverse().map(
             (not, i) =>
               not.exit_time >= this.state.timer && (
                 <Notification
