@@ -9,6 +9,10 @@ TRUNK_HALFSIZE = 50
 GALAXY_SCALE = 10000
 SUN_R_TO_PARSEC = 696_340.0 / 30_856_775_814_914.0
 
+@numba.jit(cache=True)
+def merge_lum_and_size(lum: float, size: float) -> float:
+    return size * (math.log10(lum + 1) / 3 + 1)
+
 negone_or = lambda v: -1 if math.isnan(v) else v  
 COLUMNS = ["ap.radius_flame", "gs.ra", "gs.dec", "gs.distance_gspphot", "gs.pseudocolour", "ap.lum_flame", "ap.mass_flame", "ap.age_flame", "ap.teff_gspphot"]
 
@@ -64,7 +68,7 @@ async def get_stars_from_planet_coords(
     dist_min, dist_max = planet.sy_dist - trunk_halfsize, planet.sy_dist + trunk_halfsize 
 
     if dist_min > 0:
-        radius = math.degrees(math.atan(trunk_halfsize / planet.sy_dist))
+        radius = math.degrees(math.acos(trunk_halfsize / planet.sy_dist))
         print(f"r: {radius}")
         stmt = f"""
         SELECT

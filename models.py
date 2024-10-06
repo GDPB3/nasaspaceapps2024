@@ -11,6 +11,10 @@ class StarData(BaseModel):
   age: float          # ???
   wavelength: float
 
+class ChartData(BaseModel):
+  pl_name: str
+  quaternion: tuple[float, float, float, float] 
+  chart_size: int
 
 class PlanetData(BaseModel):
   pl_name: str

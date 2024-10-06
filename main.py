@@ -1,8 +1,10 @@
-from fastapi import FastAPI
-from models import PlanetData, StarData
+from fastapi import FastAPI, Response
+from models import PlanetData, StarData, ChartData
 from fastapi.middleware.cors import CORSMiddleware
 import pickle
+import time
 from utils import get_stars_from_planet_coords
+from chart import draw_chart
 
 planets_list : list[PlanetData] = pickle.load(open("planets.p", "rb"))
 print(f"Loaded {len(planets_list)} planets from planets.p")
@@ -34,8 +36,7 @@ async def planet_names(query:str="", count:int=len(planets_list)):
         return [planet.pl_name for planet in planets_list if query.lower() in planet.pl_name.lower()][:count]
 
 
-star_cache_size = 5
-stars_cache : list[tuple[tuple[str, int], list[StarData]]] = []
+max_star_cache_size = 5
 
 @app.get("/planets/{planet}/stars", response_model=list[StarData])
 async def get_stars_from_planet(planet:str, limit:int = -1) -> list[StarData]:
@@ -43,33 +44,33 @@ async def get_stars_from_planet(planet:str, limit:int = -1) -> list[StarData]:
     if len(planets) != 1: return []
 
     # Check for cache
-    for (entry_name, entry_limit), entry_data in stars_cache:
+    try:
+        with open("star_cache.pkl", "rb") as f:
+            star_cache : list[tuple[tuple[str, int], list[StarData]]] = pickle.load(f)
+    except FileNotFoundError:
+        star_cache = []
+        
+    for (entry_name, entry_limit), entry_data in star_cache:
         if (entry_name == planet and ((limit != -1 and limit <= entry_limit) or entry_limit == -1)):
             return entry_data
 
     results = await get_stars_from_planet_coords(planets[0], row_limit=limit) 
 
     # Save in cache
-    if len(stars_cache) == star_cache_size:
-        stars_cache.pop(0)
+    if len(star_cache) == max_star_cache_size:
+        star_cache.pop(0)
 
-    stars_cache.append(((planet, limit), results))
+    star_cache.append(((planet, limit), results))
+
+    with open("star_cache.pkl", "wb") as f:
+        pickle.dump(star_cache, f)
 
     return results
 
-@app.get("/pablo", response_model=PlanetData) 
-async def pablo():
-    return PlanetData(
-        pl_name="WASP-74 b",
-        hostname="WASP-74",
-        ra=304.538843,
-        dec = -1.0760033,
-        sy_dist = 149.216,
-        sy_mnum = 0,
-        disc_year = 2015,
-        disc_facility = "SuperWASP",
-        pl_orbper = 2.13775,
-        st_rotp = -1,
-        pl_rade = 17.486,
-        pl_masse = 301.9385
-    )
+@app.post("/planets/chart")
+async def make_chart(data: ChartData) -> Response:
+    stars = await get_stars_from_planet(data.pl_name)
+    
+    image = draw_chart(stars, data.chart_size, data.quaternion)
+
+    return Response(content=image, media_type="image/png")
