@@ -80,6 +80,12 @@ export default class App extends React.Component<object, AppState> {
         this.setState({
           stars: data,
         });
+
+        console.log("Stars: ", data);
+        console.log(
+          "Max luminosity: ",
+          Math.max(...data.map((star: Star) => star.lum))
+        );
       })
       .catch((error) => {
         console.error("Error fetching stars: ", error);

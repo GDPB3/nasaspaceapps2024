@@ -190,14 +190,6 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
       <>
         <Affix position={{ top: 20, right: 20 }}>
           <Group align="center" justify="right" ml="auto">
-            <Text color="white">
-              {this.props.stars.length} stars (max lum{" "}
-              {Math.max(...this.props.stars.map((s) => s.lum))})
-            </Text>
-            {
-              // ISSUE: If the user clicks the pause button, then moves the (camera, after)
-              // some time, the camera will start rotating again.
-            }
             <ActionIcon
               color="blue"
               radius="xl"

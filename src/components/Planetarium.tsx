@@ -197,7 +197,6 @@ export default class Planetarium extends React.Component<
   getCameraVecs = (): CameraVectors | null => this.camera_vecs;
 
   handleKeyDown = (e: React.KeyboardEvent) => {
-    console.log(e);
     if (e.key === " ") {
       this.props.onPressSpace?.();
     }
