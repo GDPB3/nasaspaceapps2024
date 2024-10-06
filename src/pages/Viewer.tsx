@@ -254,11 +254,6 @@ export default class Viewer extends React.Component<ViewerProps, ViewerState> {
             <IconArrowLeft size={16} />
           </ActionIcon>
         </Affix>
-        <Affix position={{ bottom: 20, left: 20 }}>
-          <ActionIcon color="blue" radius="xl" onClick={this.props.goBack}>
-            <IconArrowLeft size={16} />
-          </ActionIcon>
-        </Affix>
         <Planetarium
           ref={(instance) => {
             this.child = instance;
